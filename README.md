@@ -29,25 +29,38 @@ image002.png,1
 ```
 where `0` = Benign, `1` = Malignant.
 
+The 8 domains currently configured are:
+
+| Index | Dataset |
+|---|---|
+| 0 | BUSBRA — Toshiba Aplio 300 @12-14 MHz |
+| 1 | BUS-UCLM |
+| 2 | BUSBRA — GE Logiq 5 @10-12 MHz |
+| 3 | BUSBRA — GE Logiq 7 @10-14 MHz |
+| 4 | BUSBRA — U-Systems @10-14 MHz |
+| 5 | BUSI |
+| 6 | QAMEBI |
+| 7 | BUSUSG |
+
 ### 2. Adjust hyperparameters (optional)
 
 All training settings are in `hyperparameters.py`:
 
 | Parameter | Default | Description |
 |---|---|---|
-| `CLIENT_MODEL` | `'resnet18'` | Backbone: `'resnet18'`, `'efficientnet'`, `'densenet'` |
-| `CONTRASTIVE_LOSS_WEIGHT` | `0.1` | Weight of SupConLoss (alpha). Set to `0.0` for CE-only |
+| `CONTRASTIVE_LOSS_WEIGHT` | `0.1` | Weight of SupConLoss (alpha) |
 | `COMMUNICATION_ROUNDS` | `10` | Number of FL communication rounds |
 | `LOCAL_EPOCH` | `10` | Local training epochs per client per round |
 | `LEARNING_RATE` | `0.001` | Adam optimizer learning rate |
-| `PATIENCE` | `5` | Early stopping patience (on contrastive val loss) |
-| `BATCH_SIZE_CLIENT` | `32` | Client batch size |
+| `BATCH_SIZE_CLIENT` | `64` | Client batch size |
+| `CLIENT_FRACTION` | `1.0` | Fraction of clients selected per round |
 | `RANDOM_SEED` | `0` | Torch random seed |
+
+The SupConLoss temperature is fixed at `3` and the StepLR scheduler decays the learning rate by 0.1 every 5 local epochs. Early stopping uses patience of 5 on the contrastive validation loss.
 
 ## Running
 
 ```bash
-cd H:\FSCL-BC
 python run.py --fold N
 ```
 
@@ -82,13 +95,13 @@ Client checkpoints (`client_0.pth` ... `client_N.pth`) are written to the workin
 
 ```
 FSCL-BC/
-  run.py            # Entry point
-  hyperparameters.py # All configuration
-  config.py          # Experiment orchestration
-  server.py          # FL server (FedAvg aggregation + global evaluation)
-  supcon_client.py   # FL client (CE + SupConLoss, early-stopping)
-  models.py          # Backbone architectures (ResNet18, EfficientNet, DenseNet)
-  data_utils.py      # Dataset classes
-  losses.py          # SupConLoss implementation
-  resources/         # Output directory (created automatically)
+  run.py              # Entry point
+  hyperparameters.py  # All configuration
+  config.py           # Experiment orchestration
+  server.py           # FL server (FedAvg aggregation + global evaluation)
+  client.py           # FL client (CE + SupConLoss, early stopping)
+  model.py            # ResNet18 backbone (pseudo 3-channel)
+  data_utils.py       # Dataset class (image + mask → 2-channel tensor)
+  losses.py           # SupConLoss implementation
+  resources/          # Output directory (created automatically)
 ```
